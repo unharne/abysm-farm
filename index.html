@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>abysmfarm</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23FFF'/%3E%3Cpath fill='%23000' d='M2 6h2v2H2zM2 8h2v2H2zM4 4h2v2H4zM4 10h2v2H4zM6 4h4v2H6zM6 10h4v2H6zM10 6h2v2h-2zM10 8h2v2h-2zM8 2h2v2H8zM6 12h4v2H6zM4 6h2v2H4zM4 8h2v2H4zM6 6h4v4H6z'/%3E%3C/svg%3E">
+    <style>
+        /* Retro Pixel 1-Bit Aesthetic */
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --border-color: #000000;
+            --bg-color: #FFFFFF;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--black);
+            font-family: 'Press Start 2P', monospace;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 20px;
+            color: var(--black);
+            text-align: center;
+        }
+
+        /* ИЗМЕНЕНИЯ АККОРДЕОНА: СТИЛИ ЗАГОЛОВКА */
+        h2.collapsible-header {
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 0px; /* Удален нижний отступ */
+            color: var(--black);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            cursor: pointer; /* Делаем кликабельным */
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Стили для иконки переключения */
+        .toggle-icon {
+            font-size: 1.1rem;
+            margin-left: 10px;
+        }
+
+        #main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            flex-wrap: wrap; 
+            justify-content: center;
+        }
+
+        #editor-pane {
+            flex: 0 0 330px; 
+            min-width: 330px; 
+        }
+
+        #game-pane {
+            flex: 1 1 650px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Pixel Panel Style */
+        .panel {
+            background: var(--white);
+            border: 2px solid var(--border-color);
+            padding: 10px;
+            box-shadow: 4px 4px 0 var(--border-color); 
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* ИЗМЕНЕНИЯ АККОРДЕОНА: СТИЛИ КОНТЕНТА */
+        .collapsible-content {
+            padding-top: 10px;
+            max-height: 1000px; /* Достаточно большое начальное значение */
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out; /* Плавный переход */
+            opacity: 1;
+        }
+        
+        /* Скрытое состояние: используется для сворачивания */
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        #code-editor {
+            width: 100%;
+            height: 250px;
+            background: var(--white);
+            color: var(--black);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            resize: none;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .controls button {
+            flex-grow: 1;
+            padding: 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            background-color: var(--white);
+            color: var(--black);
+            box-shadow: 2px 2px 0 var(--border-color);
+            transition: all 0.1s ease;
+        }
+
+        .controls button:not(:disabled):hover {
+            background-color: #f0f0f0;
+        }
+
+        .controls button:not(:disabled):active {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
+        
+        .controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #game-container {
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 4px 4px 0 var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated; 
+            background-color: var(--white);
+        }
+
+        #hud {
+            width: 100%;
+            max-width: 640px; 
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.2;
+            border: 2px solid var(--border-color);
+            padding: 5px;
+            box-shadow: 4px 4px 0 var(--border-color);
+            background-color: var(--white);
+        }
+
+        .hud-item {
+            padding: 5px 2px;
+            border-right: 1px dashed rgba(0, 0, 0, 0.3);
+        }
+        .hud-item:last-child {
+            border-right: none;
+        }
+
+        .hud-title {
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        /* Message Box */
+        .message {
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 14px;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .message.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .message-box {
+            background: var(--black);
+            border: 2px solid var(--white);
+            padding: 20px;
+            box-shadow: 8px 8px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .message h1 {
+            color: var(--white);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .message p {
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+        }
+
+        .message button {
+            background-color: var(--white); 
+            color: var(--black);
+            padding: 8px 20px;
+            border: 2px solid var(--black);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 var(--black);
+            transition: background-color 0.1s, transform 0.1s;
+        }
+
+        .message button:hover {
+            background-color: #cccccc;
+        }
+        .message button:active {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
+
+        .instructions {
+            background: #f0f0f0;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 10px;
+            line-height: 1.4;
+            max-width: 100%;
+            text-align: left;
+        }
+        .instructions h3 {
+            color: var(--black); 
+            margin-top: 0;
+            font-size: 0.9rem;
+            font-weight: 400;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.5);
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+        .instructions code {
+            color: #AA0000; /* Ретро-красный для кода */
+            font-family: 'Press Start 2P', monospace;
+            background-color: var(--white);
+            padding: 1px 2px;
+            font-size: 9px;
+            border: 1px dashed rgba(0, 0, 0, 0.3);
+        }
+        
+        #footer {
+            margin-top: 30px;
+            margin-bottom: 10px;
+            font-size: 8px;
+            text-align: center;
+        }
+        #footer a {
+            color: var(--black);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--black);
+        }
+        #footer a:hover {
+            border-bottom: 1px solid var(--black);
+        }
+
+        @media (max-width: 980px) { 
+            #editor-pane, #game-pane {
+                 flex: 1 1 100%; 
+            }
+            #game-pane {
+                 min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ваша Ферма</h1>
+
+    <div id="main-layout">
+        
+        <div id="editor-pane" class="panel">
+            <h2 class="collapsible-header" onclick="togglePanel(this)">
+                > ПРОГРАММА 
+                <span class="toggle-icon">[v]</span>
+            </h2>
+            
+            <div id="program-content" class="collapsible-content">
+                <textarea id="code-editor" spellcheck="false"></textarea>
+                
+                <div class="controls">
+                    <button id="btn-run" onclick="runProgram()">ЗАПУСК</button>
+                    <button id="btn-stop" onclick="stopProgram()" disabled>СТОП</button>
+                </div>
+
+                <div class="instructions">
+                    <h3>> ДОСТУПНЫЕ КОМАНДЫ</h3>
+                    <p>Ваша программа выполняется циклически. Используйте новые команды для навигации.</p>
+                    <ul>
+                        <li><code>move('forward')</code>: Перемещает дрон на 1 клетку в текущем направлении.</li>
+                        <li><code>turn('left'/'right')</code>: Поворачивает дрон на 90 градусов.</li>
+                        <li><code>action('plant')</code>: Сажает семя на почве (если есть семена).</li>
+                        <li><code>action('harvest')</code>: Собирает урожай.</li>
+                        <li><code>drone.x = 8</code> / <code>drone.y = 6</code>: Сброс позиции.</li>
+                        <li><code>drone.direction = 0..3</code>: Сброс направления (0:UP, 1:RIGHT, 2:DOWN, 3:LEFT).</li>
+                    </ul>
+                    <p>НОВЫЕ ФУНКЦИИ (УСЛОВИЯ): Вы можете использовать эти функции в коде, чтобы дрон выполнял действия, только если они возможны. Например: <code>action('harvest') if can('harvest')</code> (простая логика, которую парсер поймет).</p>
+                    <ul>
+                        <li><code>can('harvest')</code>: Возвращает true, если под дроном созревший урожай.</li>
+                        <li><code>can('plant')</code>: Возвращает true, если под дроном пустая почва и есть семена.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-pane">
+             <h2 class="collapsible-header" onclick="togglePanel(this)">
+                > ИГРОВАЯ ОБЛАСТЬ
+                <span class="toggle-icon">[v]</span>
+            </h2>
+             <div id="game-content" class="collapsible-content">
+                <div id="game-container">
+                    <canvas id="game-canvas" width="640" height="480"></canvas>
+                </div>
+            
+                <div id="hud">
+                    <div class="hud-item">
+                        <div class="hud-title">УРОЖАЙ</div>
+                        <div id="score">0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-title">ЦЕЛЬ</div>
+                        <div id="goal">10</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-title">СЕМЕНА</div>
+                        <div id="seeds">5</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-title">КОМАНДА</div>
+                        <div id="current-command">ОЖИДАНИЕ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="footer">
+        © 2025 ABYSMFARM. GitHub: <a href="https://github.com/unharne" target="_blank">unharne</a>
+    </div>
+    
+    <div id="game-message" class="message">
+        <div class="message-box">
+            <h1 id="message-title">НАЧАТЬ СИМУЛЯЦИЮ</h1>
+            <p id="message-text">Добро пожаловать в ретро-симулятор!<br>Соберите 10 ед. урожая. Используйте новые команды `move('forward')` и `turn()`.</p>
+            <button onclick="document.getElementById('game-message').classList.remove('active')">СТАРТ</button>
+        </div>
+    </div>
+
+    <script>
+        const CANVAS_ID = 'game-canvas';
+        const TILE_SIZE = 40; 
+        const MAP_WIDTH = 16;
+        const MAP_HEIGHT = 12;
+        const DRONE_TICK_RATE = 400; /* Немного быстрее */
+        const GROW_TIME = 6000; 
+
+        /* 1-Бит Графика - Только ЧЕРНЫЙ и БЕЛЫЙ */
+        const T = { SOIL: 0, SEED: 1, P1: 2, P2: 3, HARVEST: 4 };
+        const C = {
+            BG: '#FFFFFF',
+            SOIL: '#FFFFFF',
+            DRONE: '#000000', 
+            PLANT_A: '#000000', /* Растение (стадия 1) */
+            PLANT_B: '#000000', /* Растение (стадия 2) */
+            HARVEST: '#000000', /* Созревший Урожай */
+            GRID: 'rgba(0, 0, 0, 0.1)',
+            LINE: '#000000'
+        };
+
+        /* Drone Directions (0: UP, 1: RIGHT, 2: DOWN, 3: LEFT) */
+        const DIRECTIONS = [
+            { dx: 0, dy: -1, symbol: '^' }, 
+            { dx: 1, dy: 0, symbol: '>' }, 
+            { dx: 0, dy: 1, symbol: 'v' }, 
+            { dx: -1, dy: 0, symbol: '<' }  
+        ];
+
+        let canvas, ctx, map = []; 
+        let drone = { x: 8, y: 6, direction: 0 }; /* Новое: direction */
+        let G = {
+            score: 0,
+            goal: 10,
+            seeds: 5,
+            isGameOver: false,
+            isProgramRunning: false,
+            instructions: [],
+            currentInstructionIndex: 0,
+            droneTimer: null, 
+        };
+        let lastUpdateTime = 0;
+        let animationFrameId = null;
+
+        /* ---------------- НОВАЯ ФУНКЦИЯ АККОРДЕОНА ---------------- */
+        function togglePanel(header) {
+            // Находим следующий элемент, который должен быть содержимым
+            const content = header.nextElementSibling; 
+            const icon = header.querySelector('.toggle-icon');
+
+            // Переключаем класс 'collapsed'
+            content.classList.toggle('collapsed');
+            
+            // Если панель была открыта (и теперь сворачивается)
+            if (content.classList.contains('collapsed')) {
+                // Устанавливаем max-height в 0, чтобы сработал CSS-переход
+                content.style.maxHeight = '0';
+                icon.textContent = '[>]'; // Закрытая иконка
+            } else {
+                // Если панель закрыта (и теперь открывается)
+                // Устанавливаем max-height на scrollHeight, чтобы показать контент
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.textContent = '[v]'; // Открытая иконка
+            }
+        }
+        /* ---------------- ----------------------- ---------------- */
+
+
+        function initGame() {
+            canvas = document.getElementById(CANVAS_ID);
+            ctx = canvas.getContext('2d');
+            canvas.width = MAP_WIDTH * TILE_SIZE;
+            canvas.height = MAP_HEIGHT * TILE_SIZE;
+            resetMap();
+            setupDefaultCode();
+            updateHUD();
+            lastUpdateTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+            
+            // Инициализация состояний панелей: 
+            // Получаем все элементы с классом collapsible-content
+            document.querySelectorAll('.collapsible-content').forEach(content => {
+                 // Устанавливаем max-height для корректной работы сворачивания
+                 content.style.maxHeight = content.scrollHeight + 'px';
+            });
+            
+            // Свернем панель игры по умолчанию
+            const gameHeader = document.querySelector('#game-pane .collapsible-header');
+            if(gameHeader) {
+                togglePanel(gameHeader);
+            }
+        }
+
+        function setupDefaultCode() {
+            const defaultCode = `
+# ЦИКЛ ЗАСАДКИ/СБОРА
+turn('right')
+move('forward')
+action('plant') if can('plant')
+turn('right')
+turn('right')
+move('forward')
+action('harvest') if can('harvest')
+turn('right')
+
+# СБРОС (для бесконечного цикла)
+drone.x = 8
+drone.y = 6
+drone.direction = 0
+`;
+            document.getElementById('code-editor').value = defaultCode.trim();
+        }
+        
+        function resetMap() {
+            map = Array.from({ length: MAP_HEIGHT }, (_, y) => 
+                Array.from({ length: MAP_WIDTH }, (_, x) => ({
+                    type: T.SOIL,
+                    growthTimer: 0, 
+                }))
+            );
+            drone.x = Math.floor(MAP_WIDTH / 2);
+            drone.y = Math.floor(MAP_HEIGHT / 2);
+            drone.direction = 0; /* Начинаем вверх */
+
+            G.score = 0;
+            G.seeds = 5;
+            G.isGameOver = false;
+        }
+
+        function parseCode(code) {
+            const lines = code.split('\n');
+            const instructions = [];
+            
+            /* Обновленные регулярные выражения */
+            const moveRegex = /^\s*move\s*\(\s*['"](forward)['"]\s*\)\s*(if\s*can\s*\(\s*['"](harvest|plant)['"]\s*\))?\s*$/i;
+            const turnRegex = /^\s*turn\s*\(\s*['"](left|right)['"]\s*\)\s*$/i;
+            const actionRegex = /^\s*action\s*\(\s*['"](plant|harvest)['"]\s*\)\s*(if\s*can\s*\(\s*['"](harvest|plant)['"]\s*\))?\s*$/i;
+            const droneResetRegex = /^\s*drone\.(x|y|direction)\s*=\s*(\d+)\s*$/i;
+
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('#') || trimmedLine.length === 0) return;
+
+                let match;
+                
+                // 1. Move
+                match = trimmedLine.match(moveRegex);
+                if (match) {
+                    instructions.push({ 
+                        type: 'move', 
+                        value: match[1].toLowerCase(), 
+                        condition: match[3] ? match[3].toLowerCase() : null, /* Новое: условие */
+                        lineIndex: index 
+                    });
+                    return;
+                }
+
+                // 2. Turn
+                match = trimmedLine.match(turnRegex);
+                if (match) {
+                    instructions.push({ 
+                        type: 'turn', 
+                        value: match[1].toLowerCase(), 
+                        lineIndex: index 
+                    });
+                    return;
+                }
+
+                // 3. Action
+                match = trimmedLine.match(actionRegex);
+                if (match) {
+                    instructions.push({ 
+                        type: 'action', 
+                        value: match[1].toLowerCase(), 
+                        condition: match[3] ? match[3].toLowerCase() : null, /* Новое: условие */
+                        lineIndex: index 
+                    });
+                    return;
+                }
+
+                // 4. Reset
+                match = trimmedLine.match(droneResetRegex);
+                if (match) {
+                    instructions.push({ 
+                        type: 'reset', 
+                        axis: match[1].toLowerCase(), 
+                        value: parseInt(match[2]), 
+                        lineIndex: index 
+                    });
+                    return;
+                }
+            });
+            return instructions;
+        }
+
+        function runProgram() {
+            if (G.isProgramRunning) return;
+
+            const code = document.getElementById('code-editor').value;
+            G.instructions = parseCode(code);
+            
+            if (G.instructions.length === 0) {
+                alert('Код не содержит команд для выполнения!');
+                return;
+            }
+
+            document.getElementById('btn-run').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+            G.isProgramRunning = true;
+            G.currentInstructionIndex = 0;
+            
+            /* Если игра завершена, сбросить все перед запуском */
+            if (G.isGameOver) resetMap(); 
+
+            G.droneTimer = setInterval(executeNextInstruction, DRONE_TICK_RATE);
+        }
+
+        function stopProgram() {
+            if (!G.isProgramRunning) return;
+
+            clearInterval(G.droneTimer);
+            G.droneTimer = null;
+            G.isProgramRunning = false;
+            
+            document.getElementById('btn-run').disabled = false;
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('current-command').textContent = 'СТОП';
+        }
+
+        /* ---------------- НОВЫЕ ФУНКЦИИ УСЛОВИЙ ---------------- */
+        function can(action) {
+            const tile = map[drone.y][drone.x];
+            
+            if (action === 'harvest') {
+                return tile.type === T.HARVEST;
+            } else if (action === 'plant') {
+                return tile.type === T.SOIL && G.seeds > 0;
+            }
+            return false;
+        }
+        /* ---------------- ----------------------- ---------------- */
+
+
+        function executeNextInstruction() {
+            if (!G.isProgramRunning || G.isGameOver) {
+                stopProgram();
+                return;
+            }
+
+            if (G.currentInstructionIndex >= G.instructions.length) {
+                G.currentInstructionIndex = 0;
+            }
+
+            const instruction = G.instructions[G.currentInstructionIndex];
+            
+            if (!instruction) {
+                stopProgram();
+                return;
+            }
+            
+            const valueText = instruction.value || instruction.axis;
+            let commandText = `${instruction.type.toUpperCase()}(${valueText})${instruction.condition ? ' IF '+instruction.condition.toUpperCase() : ''}`;
+            document.getElementById('current-command').textContent = commandText;
+            
+            let shouldExecute = true;
+            if (instruction.condition) {
+                shouldExecute = can(instruction.condition);
+            }
+
+            if (shouldExecute) {
+                if (instruction.type === 'move') {
+                    moveDrone(instruction.value);
+                } else if (instruction.type === 'turn') {
+                    turnDrone(instruction.value); /* Новая функция */
+                } else if (instruction.type === 'action') {
+                    performDroneAction(instruction.value);
+                } else if (instruction.type === 'reset') {
+                    resetDronePosition(instruction.axis, instruction.value);
+                }
+            }
+
+            G.currentInstructionIndex++;
+            updateHUD();
+        }
+
+        /* ---------------- НОВЫЕ ФУНКЦИИ ДВИЖЕНИЯ ---------------- */
+        function turnDrone(direction) {
+            if (direction === 'left') {
+                drone.direction = (drone.direction + 3) % 4; /* +3 равно -1 по модулю 4 */
+            } else if (direction === 'right') {
+                drone.direction = (drone.direction + 1) % 4;
+            }
+        }
+
+        function moveDrone(command) {
+            if (command !== 'forward') return;
+            
+            const dir = DIRECTIONS[drone.direction];
+            let newX = drone.x + dir.dx;
+            let newY = drone.y + dir.dy;
+
+            if (newX >= 0 && newX < MAP_WIDTH && newY >= 0 && newY < MAP_HEIGHT) {
+                drone.x = newX;
+                drone.y = newY;
+            }
+        }
+        
+        function resetDronePosition(axis, value) {
+            if (axis === 'x' && value >= 0 && value < MAP_WIDTH) {
+                drone.x = value;
+            } else if (axis === 'y' && value >= 0 && value < MAP_HEIGHT) {
+                drone.y = value;
+            } else if (axis === 'direction' && value >= 0 && value < 4) { /* Новое */
+                drone.direction = value;
+            }
+        }
+        /* ---------------- ----------------------- ---------------- */
+
+        function performDroneAction(action) {
+            const tile = map[drone.y][drone.x];
+
+            if (action === 'plant') {
+                if (tile.type === T.SOIL && G.seeds > 0) {
+                    tile.type = T.SEED;
+                    tile.growthTimer = 0;
+                    G.seeds--;
+                }
+            } else if (action === 'harvest') {
+                if (tile.type === T.HARVEST) {
+                    tile.type = T.SOIL;
+                    tile.growthTimer = 0;
+                    G.score++;
+                    G.seeds++; /* Получаем семя обратно */
+                }
+            }
+        }
+
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastUpdateTime;
+            update(deltaTime);
+            draw();
+            lastUpdateTime = currentTime;
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function update(deltaTime) {
+            if (G.isGameOver) return;
+
+            /* Логика роста растений */
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    const tile = map[y][x];
+                    
+                    if (tile.type > T.SOIL && tile.type < T.HARVEST) {
+                        tile.growthTimer += deltaTime;
+                        const stageDuration = GROW_TIME / 3;
+                        
+                        if (tile.type === T.SEED && tile.growthTimer >= stageDuration) {
+                            tile.type = T.P1;
+                        } else if (tile.type === T.P1 && tile.growthTimer >= stageDuration * 2) {
+                            tile.type = T.P2;
+                        } else if (tile.type === T.P2 && tile.growthTimer >= GROW_TIME) {
+                            tile.type = T.HARVEST;
+                            tile.growthTimer = GROW_TIME;
+                        }
+                    }
+                }
+            }
+
+            if (G.score >= G.goal) endGame(true);
+            updateHUD();
+        }
+
+        function draw() {
+            ctx.fillStyle = C.BG;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    const tile = map[y][x];
+                    
+                    /* Почва - просто фон, так как она белая */
+                    // drawTile(x, y, C.SOIL); 
+
+                    let color, sizeFactor, symbol;
+                    
+                    switch (tile.type) {
+                        case T.SEED: color = C.PLANT_A; sizeFactor = 0.3; symbol = 'S'; break;
+                        case T.P1: color = C.PLANT_A; sizeFactor = 0.5; symbol = 'P'; break;
+                        case T.P2: color = C.PLANT_B; sizeFactor = 0.7; symbol = 'B'; break;
+                        case T.HARVEST: color = C.HARVEST; sizeFactor = 0.9; symbol = 'H'; break;
+                        default: continue;
+                    }
+
+                    if (color) {
+                        drawPixelPlant(x, y, color, symbol, tile.growthTimer / GROW_TIME);
+                    }
+                }
+            }
+
+            /* Пиксельная Сетка */
+            ctx.strokeStyle = C.GRID;
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= MAP_WIDTH; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * TILE_SIZE, 0);
+                ctx.lineTo(x * TILE_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= MAP_HEIGHT; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * TILE_SIZE);
+                ctx.lineTo(canvas.width, y * TILE_SIZE);
+                ctx.stroke();
+            }
+
+            drawPixelDrone(drone.x, drone.y, drone.direction);
+        }
+
+        function drawPixelPlant(x, y, color, symbol, progress) {
+            ctx.fillStyle = color;
+            ctx.font = `${TILE_SIZE * 0.7}px 'Press Start 2P'`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            /* Отображение символа для стадии роста */
+            ctx.fillText(symbol, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 2);
+            
+            /* Пиксельный прогресс-бар */
+            ctx.fillStyle = C.LINE;
+            const barY = y * TILE_SIZE + TILE_SIZE - 4;
+            const barW = TILE_SIZE - 4;
+
+            /* Пустой бар */
+            ctx.fillRect(x * TILE_SIZE + 2, barY, barW, 2); 
+            
+            /* Заполненный бар */
+            if (progress < 1) {
+                ctx.fillStyle = C.PLANT_A;
+                ctx.fillRect(x * TILE_SIZE + 2, barY, barW * progress, 2);
+            }
+        }
+
+        function drawPixelDrone(x, y, direction) {
+            ctx.fillStyle = C.DRONE;
+            
+            const boxSize = TILE_SIZE * 0.7;
+            const boxX = x * TILE_SIZE + (TILE_SIZE - boxSize) / 2;
+            const boxY = y * TILE_SIZE + (TILE_SIZE - boxSize) / 2;
+            
+            /* Тело Дрона - Квадрат */
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+
+            /* Направление - Стрелка */
+            ctx.fillStyle = C.BG;
+            ctx.font = `${boxSize * 0.8}px 'Press Start 2P'`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const arrow = DIRECTIONS[direction].symbol;
+            
+            ctx.fillText(arrow, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2 + 2);
+        }
+
+        function updateHUD() {
+            document.getElementById('score').textContent = G.score;
+            document.getElementById('goal').textContent = G.goal;
+            document.getElementById('seeds').textContent = G.seeds;
+            
+            const instruction = G.instructions[G.currentInstructionIndex];
+            if (instruction) {
+                document.getElementById('current-command').textContent = `${instruction.type.toUpperCase()}`;
+            } else if (!G.isProgramRunning) {
+                 document.getElementById('current-command').textContent = 'ОЖИДАНИЕ';
+            }
+        }
+
+        function endGame(won) {
+            stopProgram(); 
+            G.isGameOver = true;
+            
+            const messageEl = document.getElementById('game-message');
+            const titleEl = document.getElementById('message-title');
+            const textEl = document.getElementById('message-text');
+            const button = messageEl.querySelector('button');
+
+            if (won) {
+                titleEl.textContent = '== ПОБЕДА ==';
+                textEl.innerHTML = `Собрано ${G.score} урожая. ВЫ ГЕНИЙ КОДА!`;
+            } else {
+                titleEl.textContent = '== ПРОВАЛ ==';
+                textEl.innerHTML = `Цель не достигнута. Оптимизируйте свой код.`;
+            }
+            
+            button.textContent = 'ПЕРЕЗАПУСК';
+            button.onclick = () => { resetMap(); updateHUD(); messageEl.classList.remove('active'); };
+            messageEl.classList.add('active');
+        }
+
+        window.onload = function() {
+            initGame();
+            document.getElementById('game-message').classList.add('active');
+        };
+    </script>
+</body>
+</html>
