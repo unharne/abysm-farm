@@ -393,7 +393,7 @@
     <div id="game-message" class="message">
         <div class="message-box">
             <h1 id="message-title">НАЧАТЬ СИМУЛЯЦИЮ</h1>
-            <p id="message-text">Добро пожаловать в ретро-симулятор!<br>Соберите 10 ед. урожая. Используйте новые команды `move('forward')` и `turn()`.</p>
+            <p id="message-text">Добро пожаловать!<br>Соберите 10 ед. урожая.</p>
             <button onclick="document.getElementById('game-message').classList.remove('active')">СТАРТ</button>
         </div>
     </div>
@@ -493,20 +493,7 @@
 
         function setupDefaultCode() {
             const defaultCode = `
-# ЦИКЛ ЗАСАДКИ/СБОРА
-turn('right')
 move('forward')
-action('plant') if can('plant')
-turn('right')
-turn('right')
-move('forward')
-action('harvest') if can('harvest')
-turn('right')
-
-# СБРОС (для бесконечного цикла)
-drone.x = 8
-drone.y = 6
-drone.direction = 0
 `;
             document.getElementById('code-editor').value = defaultCode.trim();
         }
